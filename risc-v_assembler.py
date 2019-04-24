@@ -61,7 +61,7 @@ funct3Dict = {
     "slli": "001",
     "slt": "010",
     "slti": "010",
-    "lw": "101",
+    "lw": "010",
     "sltu": "011",
     "sltiu": "011",
     "xor": "100",
@@ -83,9 +83,8 @@ funct3Dict = {
     
 }    
 
-print("Warning! B-type and J-type instruction offsets aren't working properly")
 path = input("Enter assembly file path: ")
-dest = input("Enter destination file path: ")
+instrList = []
 #print(path)
 
 with open(path, 'r') as fp:
@@ -119,6 +118,7 @@ with open(path, 'r') as fp:
         instruction = ""
         #print(opcodeDict[opcode])
 
+        #assemble instructions in binary
         if (instrType == "R"):
             rdInt = regDict[args[0]]
             rd = bindigits(rdInt, 5)
@@ -188,10 +188,10 @@ with open(path, 'r') as fp:
             #print(instruction)
             #print(hex(int(instruction, 2)))
 
-        #jumps to the PC + given offset, so beware!
+        #currently does shift BEFORE re-arranging bits--not sure if right
         elif (instrType == "B"):
 
-            immUnsplit = bindigits(int(args[2], 16) - pc, 12)
+            immUnsplit = bindigits((int(args[2], 16) - pc) >> 1, 12)
             upperImm = immUnsplit[0] + immUnsplit[2:8]
             lowerImm = immUnsplit[8:12] + immUnsplit[1]
 
@@ -206,7 +206,7 @@ with open(path, 'r') as fp:
             instruction += (upperImm + rs2 + rs1 + funct3 + lowerImm + opcodeBin)
             #print(line)
             #print(int(args[2], 16))
-            #print(immUnsplit)
+            print(int(immUnsplit, 2))
             #print(instruction)
             #print(hex(int(instruction, 2)))
 
@@ -224,20 +224,20 @@ with open(path, 'r') as fp:
             #print(instruction)
             #print(hex(int(instruction, 2)))
 
-        #jumps to the PC + given offset, so beware! offset seems weird right now
+        #currently does shift BEFORE re-arranging bits--not sure if correct
         elif (instrType == "J"):
 
             rdInt = regDict[args[0]]
             rd = bindigits(rdInt, 5)
 
-            immUnordered = bindigits(int(args[1], 16) - pc, 20)
+            immUnordered = bindigits((int(args[1], 16) - pc) >> 1, 20)
             immOrdered = (immUnordered[0] + immUnordered[10:20] + immUnordered[9] + immUnordered[1:9])
-            immOrdered = bindigits((int(immOrdered, 2) >> 1), 20)
+            #immOrdered = bindigits((int(immOrdered, 2) >> 1), 20)
 
             instruction += (immOrdered + rd + opcodeBin)
             
             #print(args)
-            print(int(args[1], 16)-pc)
+            #print(int(args[1], 16)-pc)
             #print(instructionHex)
 
         #skip junk instructions
@@ -246,8 +246,8 @@ with open(path, 'r') as fp:
 
         instructionHex = '{0:08X}'.format(int(instruction, 2))
         #print(lineToken)
-        print('{0:04X}'.format(pc) + ": " + lineToken[0] + " " + lineToken[1] + ": " + instructionHex)
-
+        #print('{0:04X}'.format(pc) + ": " + lineToken[0] + " " + lineToken[1] + ": " + instructionHex)
+        instrList.append(instructionHex)
 
 
 
@@ -257,4 +257,20 @@ with open(path, 'r') as fp:
         line = fp.readline()
         pc += 4
 
-print("done")
+#print(instrList)
+instrString = "@00000000"
+instrCount = 0
+
+for instr in instrList:
+
+    if (instrCount % 4 == 0):
+        instrString += "\n"
+
+    instrString += (instr + " ")
+    instrCount += 1
+
+destFile = open((path.split(".")[0]) + ".vmh", "w")
+destFile.write(instrString)
+destFile.close()
+
+
