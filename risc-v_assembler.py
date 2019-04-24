@@ -191,7 +191,7 @@ with open(path, 'r') as fp:
         #jumps to the PC + given offset, so beware!
         elif (instrType == "B"):
 
-            immUnsplit = bindigits(int(args[2], 16), 12)
+            immUnsplit = bindigits(int(args[2], 16) - pc, 12)
             upperImm = immUnsplit[0] + immUnsplit[2:8]
             lowerImm = immUnsplit[8:12] + immUnsplit[1]
 
@@ -230,13 +230,14 @@ with open(path, 'r') as fp:
             rdInt = regDict[args[0]]
             rd = bindigits(rdInt, 5)
 
-            immUnordered = bindigits(int(args[1], 16), 20)
-            immOrdered = immUnordered[0] + immUnordered[10:20] + immUnordered[9] + immUnordered[1:9]
+            immUnordered = bindigits(int(args[1], 16) - pc, 20)
+            immOrdered = (immUnordered[0] + immUnordered[10:20] + immUnordered[9] + immUnordered[1:9])
+            immOrdered = bindigits((int(immOrdered, 2) >> 1), 20)
 
             instruction += (immOrdered + rd + opcodeBin)
             
             #print(args)
-            #print(immOrdered)
+            print(int(args[1], 16)-pc)
             #print(instructionHex)
 
         #skip junk instructions

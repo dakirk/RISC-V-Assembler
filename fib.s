@@ -1,7 +1,3 @@
-bne	a4,a5,f8 <gcd+0x30>
-bge	a5,a4,118 <gcd+0x50>
-blt	a5,a4,f4 <fib+0x2c>
-
 addi	zero,zero,0
 addi	zero,zero,0
 addi	zero,zero,0
