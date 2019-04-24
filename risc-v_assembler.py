@@ -1,4 +1,6 @@
-import re
+# This is a very basic assembler for the RISC-V RV32I base instruction set.
+# It supports most instructions, except for FENCE, FENCE.I, ECALL, EBREAK, 
+# CSRRW, CSRRS, CSRRC, CSRRWI, CSRRWI, CSRRSI, and CSRRCI.
 
 #does 2's complement (from here: https://stackoverflow.com/questions/12946116/twos-complement-binary-in-python/12946226)
 def bindigits(n, bits):
@@ -116,10 +118,10 @@ with open(path, 'r') as fp:
         opcodeBin = opcodeDict[opcode][0]
 
         instruction = ""
-        #print(opcodeDict[opcode])
 
         #assemble instructions in binary
         if (instrType == "R"):
+
             rdInt = regDict[args[0]]
             rd = bindigits(rdInt, 5)
 
@@ -134,8 +136,6 @@ with open(path, 'r') as fp:
             funct7 = funct7Dict[opcode]
 
             instruction += (funct7 + rs2 + rs1 + funct3 + rd + opcodeBin)
-            #print(instruction)
-            #print(hex(int(instruction, 2)))
 
         elif (instrType == "I"):
 
@@ -151,23 +151,15 @@ with open(path, 'r') as fp:
             rs1 = bindigits(rs1Int, 5)
 
             imm = ""
-
-            #print(lineToken)
             
             if (opcode == "slli" or opcode == "srli"):
                 imm = "0000000" + bindigits(int(args[2]), 5)
             elif (opcode == "srai"):
                 imm = "0100000" + bindigits(int(args[2]), 5)
             else:
-                imm = bindigits(int(args[2]), 12)
-
-            #if (opcode == "jalr"):
-                #("rd: " + rd + "\nrs1: " + rs1 + "\nimm: " + imm)
-                          
+                imm = bindigits(int(args[2]), 12)     
 
             instruction += (imm + rs1 + funct3 + rd + opcodeBin)
-            #print(hex(int(instruction, 2)))
-            #print(instruction)
 
         elif (instrType == "S"):
             
@@ -184,11 +176,8 @@ with open(path, 'r') as fp:
             rs1 = bindigits(rs1Int, 5)
 
             instruction += (upperImm + rs2 + rs1 + funct3 + lowerImm + opcodeBin)
-            #print(line)
-            #print(instruction)
-            #print(hex(int(instruction, 2)))
 
-        #currently does shift BEFORE re-arranging bits--not sure if right
+        #currently does shift BEFORE re-arranging bits--not sure if correct
         elif (instrType == "B"):
 
             immUnsplit = bindigits((int(args[2], 16) - pc) >> 1, 12)
@@ -204,11 +193,6 @@ with open(path, 'r') as fp:
             rs2 = bindigits(rs2Int, 5)
 
             instruction += (upperImm + rs2 + rs1 + funct3 + lowerImm + opcodeBin)
-            #print(line)
-            #print(int(args[2], 16))
-            print(int(immUnsplit, 2))
-            #print(instruction)
-            #print(hex(int(instruction, 2)))
 
         elif (instrType == "U"):
 
@@ -218,11 +202,6 @@ with open(path, 'r') as fp:
             imm = bindigits(int(args[1], 16), 20)
 
             instruction += (imm + rd + opcodeBin)
-
-            #print(lineToken)
-            #print(args)
-            #print(instruction)
-            #print(hex(int(instruction, 2)))
 
         #currently does shift BEFORE re-arranging bits--not sure if correct
         elif (instrType == "J"):
@@ -235,29 +214,20 @@ with open(path, 'r') as fp:
             #immOrdered = bindigits((int(immOrdered, 2) >> 1), 20)
 
             instruction += (immOrdered + rd + opcodeBin)
-            
-            #print(args)
-            #print(int(args[1], 16)-pc)
-            #print(instructionHex)
 
         #skip junk instructions
         else:
             continue 
 
+        #prepare for writing to file
         instructionHex = '{0:08X}'.format(int(instruction, 2))
-        #print(lineToken)
-        #print('{0:04X}'.format(pc) + ": " + lineToken[0] + " " + lineToken[1] + ": " + instructionHex)
         instrList.append(instructionHex)
-
-
-
-
 
         #end stuff
         line = fp.readline()
         pc += 4
 
-#print(instrList)
+#generate string to write (imitates given vmh format)
 instrString = "@00000000"
 instrCount = 0
 
@@ -269,7 +239,10 @@ for instr in instrList:
     instrString += (instr + " ")
     instrCount += 1
 
-destFile = open((path.split(".")[0]) + ".vmh", "w")
+#write to file
+destPath = (path.split(".")[0]) + ".vmh"
+print("Generated vmh file: " + destPath)
+destFile = open(destPath, "w")
 destFile.write(instrString)
 destFile.close()
 
